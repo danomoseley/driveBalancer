@@ -80,6 +80,7 @@ def updateSickbeard(src, dest):
         con = lite.connect('C:\Program Files (x86)\SickBeard\sickbeard.db') 
         cur = con.cursor()    
         cur.execute('UPDATE tv_episodes SET location = replace(location, \'' + src + '\', \'' + dest + '\') WHERE location like \'' + src + '%\'')
+        cur.execute('UPDATE tv_shows SET location = replace(location, \'' + src + '\', \'' + dest + '\') WHERE location like \'' + src + '%\'')
         data = cur.fetchone()
         print data               
     except lite.Error, e:
