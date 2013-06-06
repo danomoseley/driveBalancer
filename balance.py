@@ -122,11 +122,11 @@ def balance(paths):
         src = best_match_folder
         dest = path_with_greatest_free_space + '\\' + os.path.basename(best_match_folder)
         print 'Best match for move: ' + src + ' -> ' + dest + ' (' + humanize_bytes(max_size, 2) + ')'
-        input("Press Enter to move...")
+        input("Press enter to move folder")
         shutil.move(src, dest)
-        input("Update Sickbeard?")
+        input("Press enter to update Sickbeard")
         updateSickbeard(src, dest)
-        input("Balance again?")
+        input("Press enter to balance again")
         balance(paths)
     else:
         print 'error'
