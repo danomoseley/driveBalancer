@@ -73,7 +73,9 @@ def getImmediateSubdirectories(dir):
             if os.path.isdir(os.path.join(dir, name))]
 
 greatest_free_space = 0
-path_with_most_free_space = ''
+path_with_greatest_free_space = ''
+least_free_space = float('inf')
+path_with_least_free_space = ''
 
 paths = ['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows']
 
@@ -81,26 +83,31 @@ for path in paths:
     free_space = get_free_space(path)
     if free_space > greatest_free_space:
         greatest_free_space = free_space
-        path_with_most_free_space = path
+        path_with_greatest_free_space = path
 
-print humanize_bytes(greatest_free_space, 2)
-print path_with_most_free_space
+    if free_space < least_free_space:
+        least_free_space = free_space
+        path_with_least_free_space = path
+
+print 'Greatest free space: ' + humanize_bytes(greatest_free_space, 2)
+print 'Path: ' + path_with_greatest_free_space
+print
+print 'Least free space: ' + humanize_bytes(least_free_space, 2)
+print 'Path: ' + path_with_least_free_space
 
 best_match_folder = ''
 max_size = 0
-for disk in paths:
-    if disk not in path_with_most_free_space:
-        for dir in getImmediateSubdirectories(disk):
-            dir_size = dirSize(dir)
-            if dir_size > max_size and dir_size < (greatest_free_space / 2):
-                max_size = dir_size
-                best_match_folder = dir
+for dir in getImmediateSubdirectories(path_with_least_free_space):
+    dir_size = dirSize(dir)
+    if dir_size > max_size and dir_size < (greatest_free_space / 2):
+        max_size = dir_size
+        best_match_folder = dir
 
-if best_match_folder != '' and path_with_most_free_space != '':
+if best_match_folder != '' and path_with_greatest_free_space != '':
     print best_match_folder
     print humanize_bytes(max_size, 2)
     print
-    shutil.move(best_match_folder, path_with_most_free_space + '\\' + os.path.basename(best_match_folder))
+    shutil.move(best_match_folder, path_with_greatest_free_space + '\\' + os.path.basename(best_match_folder))
 else:
     print 'error'
 
