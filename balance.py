@@ -72,51 +72,43 @@ def getImmediateSubdirectories(dir):
     return [dir + '\\' + name for name in os.listdir(dir)
             if os.path.isdir(os.path.join(dir, name))]
 
-greatest_free_space = 0
-path_with_greatest_free_space = ''
-least_free_space = float('inf')
-path_with_least_free_space = ''
+def balance(paths):
+    greatest_free_space = 0
+    path_with_greatest_free_space = ''
+    least_free_space = float('inf')
+    path_with_least_free_space = ''
 
-paths = ['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows']
+    for path in paths:
+        free_space = get_free_space(path)
+        if free_space > greatest_free_space:
+            greatest_free_space = free_space
+            path_with_greatest_free_space = path
 
-for path in paths:
-    free_space = get_free_space(path)
-    if free_space > greatest_free_space:
-        greatest_free_space = free_space
-        path_with_greatest_free_space = path
+        if free_space < least_free_space:
+            least_free_space = free_space
+            path_with_least_free_space = path
 
-    if free_space < least_free_space:
-        least_free_space = free_space
-        path_with_least_free_space = path
+    print 'Greatest free space: ' + path_with_greatest_free_space + ' (' + humanize_bytes(greatest_free_space, 2) + ')'
 
-print 'Greatest free space: ' + humanize_bytes(greatest_free_space, 2)
-print 'Path: ' + path_with_greatest_free_space
-print
-print 'Least free space: ' + humanize_bytes(least_free_space, 2)
-print 'Path: ' + path_with_least_free_space
+    print 'Least free space: ' + path_with_least_free_space + ' (' +  humanize_bytes(least_free_space, 2) + ')'
 
-best_match_folder = ''
-max_size = 0
-for dir in getImmediateSubdirectories(path_with_least_free_space):
-    dir_size = dirSize(dir)
-    if dir_size > max_size and dir_size < (greatest_free_space / 2):
-        max_size = dir_size
-        best_match_folder = dir
+    best_match_folder = ''
+    max_size = 0
+    for dir in getImmediateSubdirectories(path_with_least_free_space):
+        dir_size = dirSize(dir)
+        if dir_size > max_size and dir_size < (greatest_free_space / 2):
+            max_size = dir_size
+            best_match_folder = dir
 
-if best_match_folder != '' and path_with_greatest_free_space != '':
-    print best_match_folder
-    print humanize_bytes(max_size, 2)
-    print
-    shutil.move(best_match_folder, path_with_greatest_free_space + '\\' + os.path.basename(best_match_folder))
-else:
-    print 'error'
+    if best_match_folder != '' and path_with_greatest_free_space != '':
+        src = best_match_folder
+        dest = path_with_greatest_free_space + '\\' + os.path.basename(best_match_folder)
+        print 'Best match for move: ' + src + ' -> ' + dest + ' (' + humanize_bytes(max_size, 2) + ')'
+        input("Press Enter to move...")
+        shutil.move(src, dest)
+        input("Balance again?")
+        balance(paths)
+    else:
+        print 'error'
 
-    # print path to all filenames.
-    # for filename in filenames:
-    #    print os.path.join(dirname, filename)
-
-    # Advanced usage:
-    # editing the 'dirnames' list will stop os.walk() from recursing into there.
-    # if '.git' in dirnames:
-    #     # don't go into any .git directories.
-    #     dirnames.remove('.git')
+balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows'])
