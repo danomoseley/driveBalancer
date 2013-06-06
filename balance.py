@@ -100,7 +100,7 @@ if best_match_folder != '' and path_with_most_free_space != '':
     print best_match_folder
     print humanize_bytes(max_size, 2)
     print
-    #shutil.move(best_match_folder, path_with_most_free_space + os.path.basename(best_match_folder))
+    shutil.move(best_match_folder, path_with_most_free_space + '\\' + os.path.basename(best_match_folder))
 else:
     print 'error'
 
