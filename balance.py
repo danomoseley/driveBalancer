@@ -7,6 +7,8 @@ import platform
 import sys
 import shutil
 
+class DirSizeError(Exception): pass
+
 def get_free_space(folder):
     """ Return folder/drive free space (in bytes)
     """
@@ -51,7 +53,7 @@ def dirSize(start, follow_links=0, start_depth=0, max_depth=0, skip_errs=0):
     total = 0L
     for item in dir_list:
         # Get statistics on each item--file and subdirectory--of start
-        path = join(start, item)
+        path = start + '\\' + item
         try: stats = os.stat(path)
         except: 
             if not skip_errs:
@@ -59,8 +61,8 @@ def dirSize(start, follow_links=0, start_depth=0, max_depth=0, skip_errs=0):
         # The size in bytes is in the seventh item of the stats tuple, so:
         total += stats[6]
         # recursive descent if warranted
-        if isdir(path) and (follow_links or not islink(path)):
-            bytes = dir_size(path, follow_links, start_depth+1, max_depth)
+        if os.path.isdir(path) and (follow_links or not os.path.islink(path)):
+            bytes = dirSize(path, follow_links, start_depth+1, max_depth)
             total += bytes
             if max_depth and (start_depth < max_depth):
                 print_path(path, bytes)
