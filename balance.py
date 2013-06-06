@@ -72,6 +72,22 @@ def dirSize(start, follow_links=0, start_depth=0, max_depth=0, skip_errs=0):
 def getImmediateSubdirectories(dir):
     return [dir + '\\' + name for name in os.listdir(dir)
             if os.path.isdir(os.path.join(dir, name))]
+            
+def updateSickbeard(src, dest):
+    con = None
+    
+    try:
+        con = lite.connect('C:\Program Files (x86)\SickBeard\sickbeard.db') 
+        cur = con.cursor()    
+        cur.execute('UPDATE tv_episodes SET location = replace(location, \'' + src + '\', \'' + dest + '\') WHERE location like \'' + src + '%\'')
+        data = cur.fetchone()
+        print data               
+    except lite.Error, e:
+        print "Error %s:" % e.args[0]
+        sys.exit(1)
+    finally:
+        if con:
+            con.close()
 
 def balance(paths):
     greatest_free_space = 0
@@ -107,31 +123,12 @@ def balance(paths):
         print 'Best match for move: ' + src + ' -> ' + dest + ' (' + humanize_bytes(max_size, 2) + ')'
         input("Press Enter to move...")
         shutil.move(src, dest)
+        input("Update Sickbeard?")
+        updateSickbeard(src, dest)
         input("Balance again?")
         balance(paths)
     else:
         print 'error'
 
-con = None
-
-try:
-    con = lite.connect('C:\Program Files (x86)\SickBeard\sickbeard.db')
-    
-    cur = con.cursor()    
-    cur.execute('SELECT SQLITE_VERSION()')
-    
-    data = cur.fetchone()
-    
-    print "SQLite version: %s" % data                
-    
-except lite.Error, e:
-    
-    print "Error %s:" % e.args[0]
-    sys.exit(1)
-    
-finally:
-    
-    if con:
-        con.close()
 
 balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows'])
