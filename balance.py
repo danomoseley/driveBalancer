@@ -6,6 +6,7 @@ import ctypes
 import platform
 import sys
 import shutil
+import sqlite3 as lite
 
 class DirSizeError(Exception): pass
 
@@ -110,5 +111,27 @@ def balance(paths):
         balance(paths)
     else:
         print 'error'
+
+con = None
+
+try:
+    con = lite.connect('C:\Program Files (x86)\SickBeard\sickbeard.db')
+    
+    cur = con.cursor()    
+    cur.execute('SELECT SQLITE_VERSION()')
+    
+    data = cur.fetchone()
+    
+    print "SQLite version: %s" % data                
+    
+except lite.Error, e:
+    
+    print "Error %s:" % e.args[0]
+    sys.exit(1)
+    
+finally:
+    
+    if con:
+        con.close()
 
 balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows'])
