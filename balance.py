@@ -124,7 +124,7 @@ def updateXBMC(src, dest):
         if con:
             con.close()
 
-def balance(paths):
+def balance(paths, count):
     greatest_free_space = 0
     path_with_greatest_free_space = ''
     least_free_space = float('inf')
@@ -140,16 +140,18 @@ def balance(paths):
             least_free_space = free_space
             path_with_least_free_space = path
 
+    if (least_free_space / greatest_free_space) > 0.8 or count <= 0:
+        sys.exit(1)
+
     print 'Greatest free space: ' + path_with_greatest_free_space + ' (' + humanize_bytes(greatest_free_space, 2) + ')'
 
     print 'Least free space: ' + path_with_least_free_space + ' (' +  humanize_bytes(least_free_space, 2) + ')'
 
     best_match_folder = ''
-    #max_size = 0
-    max_size = float('inf')
+    max_size = 0
     for dir in getImmediateSubdirectories(path_with_least_free_space):
         dir_size = dirSize(dir)
-        if dir_size < max_size and dir_size < (greatest_free_space / 2):
+        if dir_size > max_size and dir_size < (greatest_free_space / 2):
             max_size = dir_size
             best_match_folder = dir
 
@@ -161,9 +163,10 @@ def balance(paths):
         updateSickbeard(src, dest)
         updateXBMC(src, dest)
         #raw_input("Press enter to balance again")
-        balance(paths)
+        count -= 1
+        balance(paths, count)
     else:
-        print 'error'
+        sys.exit(1)
 
 
-balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows'])
+balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows'], 15)
