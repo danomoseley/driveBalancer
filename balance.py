@@ -78,11 +78,35 @@ def updateSickbeard(src, dest):
     
     try:
         con = lite.connect('C:\Program Files (x86)\SickBeard\sickbeard.db') 
-        cur = con.cursor()    
+        cur = con.cursor()
         cur.execute('UPDATE tv_episodes SET location = replace(location, \'' + src + '\', \'' + dest + '\') WHERE location like \'' + src + '%\'')
-        cur.execute('UPDATE tv_shows SET location = replace(location, \'' + src + '\', \'' + dest + '\') WHERE location like \'' + src + '%\'')
-        data = cur.fetchone()
-        print data               
+        con.commit()
+        print "Number of tv_episodes rows updated: %d" % cur.rowcount
+        cur.execute('UPDATE tv_shows SET location = replace(location, \'' + src + '\', \'' + dest + '\') WHERE location like \'' + src + '%\'')    
+        con.commit()
+        print "Number of tv_shows rows updated: %d" % cur.rowcount
+    except lite.Error, e:
+        print "Error %s:" % e.args[0]
+        sys.exit(1)
+    finally:
+        if con:
+            con.close()
+
+def updateXBMC(src, dest):
+    con = None
+    
+    try:
+        con = lite.connect('C:\Users\Dan.Moseley\AppData\Roaming\XBMC\userdata\Database\MyVideos75.db') 
+        cur = con.cursor()
+        cur.execute('UPDATE path SET strPath = replace(strPath, \'' + src + '\', \'' + dest + '\') WHERE strPath like \'' + src + '%\'')
+        con.commit()
+        print "Number of path rows updated: %d" % cur.rowcount
+        cur.execute('UPDATE tvshow SET c16 = replace(c16, \'' + src + '\', \'' + dest + '\') WHERE c16 like \'' + src + '%\'')
+        con.commit()
+        print "Number of tvshow rows updated: %d" % cur.rowcount
+        cur.execute('UPDATE episode SET c18 = replace(c18, \'' + src + '\', \'' + dest + '\') WHERE c18 like \'' + src + '%\'')    
+        con.commit()
+        print "Number of episode rows updated: %d" % cur.rowcount
     except lite.Error, e:
         print "Error %s:" % e.args[0]
         sys.exit(1)
@@ -111,10 +135,11 @@ def balance(paths):
     print 'Least free space: ' + path_with_least_free_space + ' (' +  humanize_bytes(least_free_space, 2) + ')'
 
     best_match_folder = ''
-    max_size = 0
+    #max_size = 0
+    max_size = float('inf')
     for dir in getImmediateSubdirectories(path_with_least_free_space):
         dir_size = dirSize(dir)
-        if dir_size > max_size and dir_size < (greatest_free_space / 2):
+        if dir_size < max_size and dir_size < (greatest_free_space / 2):
             max_size = dir_size
             best_match_folder = dir
 
@@ -122,9 +147,9 @@ def balance(paths):
         src = best_match_folder
         dest = path_with_greatest_free_space + '\\' + os.path.basename(best_match_folder)
         print 'Best match for move: ' + src + ' -> ' + dest + ' (' + humanize_bytes(max_size, 2) + ')'
-        input("Press enter to move folder")
+        #input("Press enter to move folder")
         shutil.move(src, dest)
-        input("Press enter to update Sickbeard")
+        #input("Press enter to update Sickbeard")
         updateSickbeard(src, dest)
         input("Press enter to balance again")
         balance(paths)
