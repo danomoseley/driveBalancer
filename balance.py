@@ -107,7 +107,7 @@ def stopSickbeard():
             if pid_search:
                 pid = pid_search.group(1)
                 
-                print'http://'+config.get('SickBeard','host')+':'+config.get('SickBeard','port')+'/home/shutdown?pid='+pid
+                print "http://%s:%s/home/shutdown?pid=%s" % (config.get('SickBeard','host'), config.get('SickBeard','port'), pid)
                 handler = openURL('http://'+config.get('SickBeard','host')+':'+config.get('SickBeard','port')+'/home/shutdown?pid='+pid,config.get('SickBeard','username'),config.get('SickBeard','password'))
 
                 while openURL('http://'+config.get('SickBeard','host')+':'+config.get('SickBeard','port'),config.get('SickBeard','username'),config.get('SickBeard','password')).getcode() == 200:        
@@ -193,9 +193,9 @@ def balance(paths, count, already_processed=[]):
     if (least_free_space / greatest_free_space) > 0.8 or count <= 0:
         return
 
-    print 'Greatest free space: ' + path_with_greatest_free_space + ' (' + humanize_bytes(greatest_free_space, 2) + ')'
+    print "Greatest free space: %s (%s)" % (path_with_greatest_free_space, humanize_bytes(greatest_free_space, 2))
 
-    print 'Least free space: ' + path_with_least_free_space + ' (' +  humanize_bytes(least_free_space, 2) + ')'
+    print "Least free space: %s (%s)" % (path_with_least_free_space, humanize_bytes(least_free_space, 2))
 
     best_match_folder = ''
     max_size = float('inf')
@@ -209,7 +209,7 @@ def balance(paths, count, already_processed=[]):
     if best_match_folder != '' and path_with_greatest_free_space != '':
         src = best_match_folder
         dest = path_with_greatest_free_space + '\\' + os.path.basename(best_match_folder)
-        print 'Moving: ' + src + ' -> ' + dest + ' (' + humanize_bytes(max_size, 2) + ')'
+        print "Moving: %s -> %s (%s)" % (src, dest, humanize_bytes(max_size, 2))
         shutil.move(src, dest)
         updateSickbeard(src, dest)
         updateXBMC(src, dest)
