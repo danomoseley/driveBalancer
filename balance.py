@@ -7,6 +7,15 @@ import platform
 import sys
 import shutil
 import sqlite3 as lite
+import urllib2
+import os
+import time
+import re
+import subprocess
+import ConfigParser
+
+config = ConfigParser.RawConfigParser()
+config.read('config.cfg')
 
 class DirSizeError(Exception): pass
 
@@ -72,12 +81,52 @@ def dirSize(start, follow_links=0, start_depth=0, max_depth=0, skip_errs=0):
 def getImmediateSubdirectories(dir):
     return [dir + '\\' + name for name in os.listdir(dir)
             if os.path.isdir(os.path.join(dir, name))]
+
+def openURL(url, username, password):
+    req = urllib2.Request(url)
+
+    password_manager = urllib2.HTTPPasswordMgrWithDefaultRealm()
+    password_manager.add_password(None, url, username, password)
+
+    auth_manager = urllib2.HTTPBasicAuthHandler(password_manager)
+    opener = urllib2.build_opener(auth_manager)
+
+    urllib2.install_opener(opener)
+
+    return urllib2.urlopen(req)
             
+def stopSickbeard():
+    try:
+        handler = openURL('http://'+config.get('SickBeard','host')+':'+config.get('SickBeard','port'),config.get('SickBeard','username'),config.get('SickBeard','password'))
+        print handler.getcode()
+        if handler.getcode() == 200:
+            page = handler.read()
+            
+            pid_search = re.search('<a href="/home/shutdown/\?pid=(\d+)" ', page, re.IGNORECASE)
+            
+            if pid_search:
+                pid = pid_search.group(1)
+                
+                print'http://'+config.get('SickBeard','host')+':'+config.get('SickBeard','port')+'/home/shutdown?pid='+pid
+                handler = openURL('http://'+config.get('SickBeard','host')+':'+config.get('SickBeard','port')+'/home/shutdown?pid='+pid,config.get('SickBeard','username'),config.get('SickBeard','password'))
+
+                while openURL('http://'+config.get('SickBeard','host')+':'+config.get('SickBeard','port'),config.get('SickBeard','username'),config.get('SickBeard','password')).getcode() == 200:        
+                    print "Sleeping for 10 seconds"
+                    time.sleep(10)
+    except Exception as e:
+        print 'Sickbeard is not running'
+
+def startSickbeard():
+    print "Starting sickbeard"
+    p = subprocess.Popen([sys.executable, config.get('SickBeard','py')], 
+                                    stdout=subprocess.PIPE, 
+                                    stderr=subprocess.STDOUT);
+
 def updateSickbeard(src, dest):
     con = None
     
     try:
-        con = lite.connect('C:\Program Files (x86)\SickBeard\sickbeard.db') 
+        con = lite.connect(config.get('SickBeard','sqlitePath')) 
         cur = con.cursor()
         cur.execute('UPDATE tv_episodes SET location = replace(location, ?, ?) WHERE location like ?',
                     (src, dest, src + '%'))
@@ -87,6 +136,7 @@ def updateSickbeard(src, dest):
         cur.execute('UPDATE tv_shows SET location = replace(location, ?, ?) WHERE location like ?',
                     (src, dest, src + '%'))    
         print "Number of tv_shows rows updated: %d" % cur.rowcount
+        
         #con.rollback()
         con.commit()
     except lite.Error, e:
@@ -100,7 +150,7 @@ def updateXBMC(src, dest):
     con = None
     
     try:
-        con = lite.connect('C:\Users\Dan.Moseley\AppData\Roaming\XBMC\userdata\Database\MyVideos75.db') 
+        con = lite.connect(config.get('XBMC','sqlitePath'))
         cur = con.cursor()
         cur.execute('UPDATE path SET strPath = replace(strPath, ?, ?) WHERE strPath like ?',
                     (src, dest, src + '%'))
@@ -123,8 +173,8 @@ def updateXBMC(src, dest):
     finally:
         if con:
             con.close()
-
-def balance(paths, count):
+            
+def balance(paths, count, already_processed=[]):
     greatest_free_space = 0
     path_with_greatest_free_space = ''
     least_free_space = float('inf')
@@ -141,19 +191,20 @@ def balance(paths, count):
             path_with_least_free_space = path
 
     if (least_free_space / greatest_free_space) > 0.8 or count <= 0:
-        sys.exit(1)
+        return
 
     print 'Greatest free space: ' + path_with_greatest_free_space + ' (' + humanize_bytes(greatest_free_space, 2) + ')'
 
     print 'Least free space: ' + path_with_least_free_space + ' (' +  humanize_bytes(least_free_space, 2) + ')'
 
     best_match_folder = ''
-    max_size = 0
+    max_size = float('inf')
     for dir in getImmediateSubdirectories(path_with_least_free_space):
         dir_size = dirSize(dir)
-        if dir_size > max_size and dir_size < (greatest_free_space / 2):
-            max_size = dir_size
-            best_match_folder = dir
+        if dir not in already_processed:
+            if dir_size < max_size and dir_size < (greatest_free_space / 2):
+                max_size = dir_size
+                best_match_folder = dir
 
     if best_match_folder != '' and path_with_greatest_free_space != '':
         src = best_match_folder
@@ -162,11 +213,15 @@ def balance(paths, count):
         shutil.move(src, dest)
         updateSickbeard(src, dest)
         updateXBMC(src, dest)
-        #raw_input("Press enter to balance again")
         count -= 1
-        balance(paths, count)
+        already_processed.append(dest)
+        choice = raw_input("Press enter to balance again or type no to stop: ").lower()
+        if choice not in ['n','no']:
+            balance(paths, count, already_processed)
     else:
-        sys.exit(1)
+        return
 
-
-balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows'], 15)
+stopSickbeard()
+time.sleep(10)
+balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows', 'C:\TV Shows'], config.getint('General','limit'))
+startSickbeard()
