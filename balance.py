@@ -126,7 +126,7 @@ def updateSickbeard(src, dest):
     con = None
     
     try:
-        con = lite.connect(config.get('SickBeard','sqlitePath')) 
+        con = lite.connect(config.get('SickBeard','sqlite_path')) 
         cur = con.cursor()
         cur.execute('UPDATE tv_episodes SET location = replace(location, ?, ?) WHERE location like ?',
                     (src, dest, src + '%'))
@@ -150,7 +150,7 @@ def updateXBMC(src, dest):
     con = None
     
     try:
-        con = lite.connect(config.get('XBMC','sqlitePath'))
+        con = lite.connect(config.get('XBMC','sqlite_path'))
         cur = con.cursor()
         cur.execute('UPDATE path SET strPath = replace(strPath, ?, ?) WHERE strPath like ?',
                     (src, dest, src + '%'))
@@ -222,6 +222,5 @@ def balance(paths, count, already_processed=[]):
         return
 
 stopSickbeard()
-time.sleep(10)
-balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows', 'C:\TV Shows'], config.getint('General','limit'))
+balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows', 'C:\TV Shows'], config.getint('General','balance_limit'))
 startSickbeard()
