@@ -215,8 +215,9 @@ def balance(paths, count, already_processed=[]):
         updateXBMC(src, dest)
         count -= 1
         already_processed.append(dest)
-        choice = raw_input("Press enter to balance again or type no to stop: ").lower()
-        if choice not in ['n','no']:
+        if len(sys.argv) == 0:
+            choice = raw_input("Press enter to balance again or type no to stop: ").lower()
+        if len(sys.argv) > 0 or choice not in ['n','no']:
             balance(paths, count, already_processed)
     else:
         return
