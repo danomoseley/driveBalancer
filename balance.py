@@ -203,8 +203,9 @@ def balance(paths, count, already_processed=[]):
         dir_size = dirSize(dir)
         if dir not in already_processed:
             if dir_size < max_size and dir_size < (greatest_free_space / 2):
-                max_size = dir_size
-                best_match_folder = dir
+                if dir_size > 1073741824:
+                    max_size = dir_size
+                    best_match_folder = dir
 
     if best_match_folder != '' and path_with_greatest_free_space != '':
         src = best_match_folder
