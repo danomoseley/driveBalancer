@@ -10,5 +10,5 @@ sqlite_path = C:\Program Files (x86)\SickBeard\sickbeard.db
 py = C:\Program Files (x86)\SickBeard\SickBeard.py
 host = localhost
 port = 8081
-username = dan-o
-password = computa
+username = username
+password = password
