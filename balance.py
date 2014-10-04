@@ -130,13 +130,30 @@ def updateSickbeard(src, dest):
         cur = con.cursor()
         cur.execute('UPDATE tv_episodes SET location = replace(location, ?, ?) WHERE location like ?',
                     (src, dest, src + '%'))
-        print "Number of tv_episodes rows updated: %d" % cur.rowcount
+        print "Number of SickBeard tv_episodes rows updated: %d" % cur.rowcount
         #con.rollback()
         con.commit()
         cur.execute('UPDATE tv_shows SET location = replace(location, ?, ?) WHERE location like ?',
                     (src, dest, src + '%'))    
-        print "Number of tv_shows rows updated: %d" % cur.rowcount
+        print "Number of SickBeard tv_shows rows updated: %d" % cur.rowcount
         
+        #con.rollback()
+        con.commit()
+    except lite.Error, e:
+        print "Error %s:" % e.args[0]
+        sys.exit(1)
+    finally:
+        if con:
+            con.close()
+            
+def updateNzbDrone(src, dest):
+    con = None
+    
+    try:
+        con = lite.connect(config.get('NzbDrone','sqlite_path'))
+        cur = con.cursor()
+        cur.execute('UPDATE Series SET Path = ? WHERE Path = ?', (dest, src))
+        print "Number of NzbDrone Series rows updated: %d" % cur.rowcount
         #con.rollback()
         con.commit()
     except lite.Error, e:
@@ -154,17 +171,17 @@ def updateXBMC(src, dest):
         cur = con.cursor()
         cur.execute('UPDATE path SET strPath = replace(strPath, ?, ?) WHERE strPath like ?',
                     (src, dest, src + '%'))
-        print "Number of path rows updated: %d" % cur.rowcount
+        print "Number of XBMC path rows updated: %d" % cur.rowcount
         #con.rollback()
         con.commit()
         cur.execute('UPDATE tvshow SET c16 = replace(c16, ?, ?) WHERE c16 like ?',
                     (src, dest, src + '%'))
-        print "Number of tvshow rows updated: %d" % cur.rowcount
+        print "Number of XBMC tvshow rows updated: %d" % cur.rowcount
         #con.rollback()
         con.commit()
         cur.execute('UPDATE episode SET c18 = replace(c18, ?, ?) WHERE c18 like ?',
                     (src, dest, src + '%'))
-        print "Number of episode rows updated: %d" % cur.rowcount
+        print "Number of XBMC episode rows updated: %d" % cur.rowcount
         #con.rollback()
         con.commit()
     except lite.Error, e:
@@ -190,7 +207,8 @@ def balance(paths, count, already_processed=[]):
             least_free_space = free_space
             path_with_least_free_space = path
 
-    if (least_free_space / greatest_free_space) > 0.8 or count <= 0:
+    free_space_difference_ratio = (least_free_space/1.0) / (greatest_free_space/1.0)
+    if free_space_difference_ratio > 0.8 or count <= 0:
         return
 
     print "Greatest free space: %s (%s)" % (path_with_greatest_free_space, humanize_bytes(greatest_free_space, 2))
@@ -212,7 +230,8 @@ def balance(paths, count, already_processed=[]):
         dest = path_with_greatest_free_space + '\\' + os.path.basename(best_match_folder)
         print "Moving: %s -> %s (%s)" % (src, dest, humanize_bytes(max_size, 2))
         shutil.move(src, dest)
-        updateSickbeard(src, dest)
+        updateNzbDrone(src, dest)
+        #updateSickbeard(src, dest)
         updateXBMC(src, dest)
         count -= 1
         already_processed.append(dest)
@@ -223,6 +242,6 @@ def balance(paths, count, already_processed=[]):
     else:
         return
 
-stopSickbeard()
-balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows', 'C:\TV Shows'], config.getint('General','balance_limit'))
-startSickbeard()
+#stopSickbeard()
+balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows', 'C:\TV Shows', 'F:\TV Shows', 'I:\TV Shows'], config.getint('General','balance_limit'))
+#startSickbeard()

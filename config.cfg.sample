@@ -12,3 +12,6 @@ host = localhost
 port = 8081
 username = username
 password = password
+
+[NzbDrone]
+sqlite_path = C:\ProgramData\NzbDrone\nzbdrone.db
