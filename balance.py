@@ -237,19 +237,18 @@ def balance(paths, count, already_processed=[]):
     print "Least free space: %s (%s)" % (path_with_least_free_space, humanize_bytes(least_free_space, 2))
 
     best_match_folder = ''
-    max_size = float('inf')
+    min_size = 1073741824
     for dir in getImmediateSubdirectories(path_with_least_free_space):
         dir_size = dirSize(dir)
         if dir not in already_processed:
-            if dir_size < max_size and dir_size < (greatest_free_space / 2):
-                if dir_size > 1073741824:
-                    max_size = dir_size
-                    best_match_folder = dir
+            if dir_size > min_size and dir_size < (greatest_free_space / 1.5):
+                min_size = dir_size
+                best_match_folder = dir
 
     if best_match_folder != '' and path_with_greatest_free_space != '':
         src = best_match_folder
         dest = path_with_greatest_free_space + '\\' + os.path.basename(best_match_folder)
-        print "Moving: %s -> %s (%s)" % (src, dest, humanize_bytes(max_size, 2))
+        print "Moving: %s -> %s (%s)" % (src, dest, humanize_bytes(min_size, 2))
         shutil.move(src, dest)
         updateNzbDrone(src, dest)
         #updateSickbeard(src, dest)
