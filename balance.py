@@ -146,6 +146,27 @@ def updateSickbeard(src, dest):
         if con:
             con.close()
             
+def updatePlex(src, dest):
+    con = None
+    
+    try:
+        con = lite.connect(config.get('Plex','sqlite_path'))
+        cur = con.cursor()
+        cur.execute('UPDATE media_parts SET file = replace(file, ?, ?) WHERE file like ?',
+                    (src, dest, src + '%'))
+        print "Number of Plex media_parts rows updated: %d" % cur.rowcount
+        con.commit()
+        cur.execute('UPDATE media_streams SET url = replace(url, ?, ?) WHERE url like ?',
+                    (src, dest, src + '%'))
+        print "Number of Plex media_streams rows updated: %d" % cur.rowcount
+        con.commit()
+    except lite.Error, e:
+        print "Error %s:" % e.args[0]
+        sys.exit(1)
+    finally:
+        if con:
+            con.close()
+
 def updateNzbDrone(src, dest):
     con = None
     
@@ -233,6 +254,7 @@ def balance(paths, count, already_processed=[]):
         updateNzbDrone(src, dest)
         #updateSickbeard(src, dest)
         updateXBMC(src, dest)
+        updatePlex(src, dest)
         count -= 1
         already_processed.append(dest)
         if len(sys.argv) == 0:
