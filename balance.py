@@ -264,5 +264,5 @@ def balance(paths, count, already_processed=[]):
         return
 
 #stopSickbeard()
-balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows', 'C:\TV Shows', 'F:\TV Shows', 'I:\TV Shows'], config.getint('General','balance_limit'))
+balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows', 'C:\TV Shows'], config.getint('General','balance_limit'))
 #startSickbeard()
