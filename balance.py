@@ -218,8 +218,10 @@ def balance(paths, count, already_processed=[]):
     least_free_space = float('inf')
     path_with_least_free_space = ''
 
+    total_free_space = 0
     for path in paths:
         free_space = get_free_space(path)
+        total_free_space += free_space
         if free_space > greatest_free_space:
             greatest_free_space = free_space
             path_with_greatest_free_space = path
@@ -227,21 +229,26 @@ def balance(paths, count, already_processed=[]):
         if free_space < least_free_space:
             least_free_space = free_space
             path_with_least_free_space = path
+    
+    target_free_space = total_free_space / len(paths)
 
     free_space_difference_ratio = (least_free_space/1.0) / (greatest_free_space/1.0)
     if free_space_difference_ratio > 0.8 or count <= 0:
         return
 
-    print "Greatest free space: %s (%s)" % (path_with_greatest_free_space, humanize_bytes(greatest_free_space, 2))
-
-    print "Least free space: %s (%s)" % (path_with_least_free_space, humanize_bytes(least_free_space, 2))
-
     best_match_folder = ''
     min_size = 1073741824
+    max_size = greatest_free_space - target_free_space
+
+    print "Greatest free space: %s (%s)" % (path_with_greatest_free_space, humanize_bytes(greatest_free_space, 2))
+    print "Least free space: %s (%s)" % (path_with_least_free_space, humanize_bytes(least_free_space, 2))
+    print "Target free space per drive: %s" % humanize_bytes(target_free_space, 2)
+    print "Free space to fill: %s" % humanize_bytes(max_size, 2)
+
     for dir in getImmediateSubdirectories(path_with_least_free_space):
         dir_size = dirSize(dir)
         if dir not in already_processed:
-            if dir_size > min_size and dir_size < (greatest_free_space / 1.5):
+            if dir_size > min_size and dir_size < max_size:
                 min_size = dir_size
                 best_match_folder = dir
 
