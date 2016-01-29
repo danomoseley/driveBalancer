@@ -1,26 +1,21 @@
 #!/usr/bin/python
 
 import os
-import doctest
 import ctypes
 import platform
 import sys
 import shutil
 import sqlite3 as lite
-import urllib2
-import os
-import time
-import re
-import subprocess
 import ConfigParser
 
 config = ConfigParser.RawConfigParser()
-config.read('config.cfg')
+config.read(os.path.join(sys.path[0],'config.cfg'))
 
 class DirSizeError(Exception): pass
 
 def get_free_space(folder):
-    """ Return folder/drive free space (in bytes)
+    """
+    Return folder/drive free space (in bytes)
     """
     if platform.system() == 'Windows':
         free_bytes = ctypes.c_ulonglong(0)
@@ -30,24 +25,26 @@ def get_free_space(folder):
         st = os.statvfs(folder)
         return st.f_bavail * st.f_frsize
 
-def humanize_bytes(bytes, precision=1):
+def humanize_bytes(bytesize, precision=2):
     """
-    Return a humanized string representation of a number of bytes.
+    Humanize byte size figures
     """
     abbrevs = (
-        (1<<50L, 'PB'),
-        (1<<40L, 'TB'),
-        (1<<30L, 'GB'),
-        (1<<20L, 'MB'),
-        (1<<10L, 'kB'),
+        (1 << 50, 'PB'),
+        (1 << 40, 'TB'),
+        (1 << 30, 'GB'),
+        (1 << 20, 'MB'),
+        (1 << 10, 'kB'),
         (1, 'bytes')
     )
-    if bytes == 1:
+    if bytesize == 1:
         return '1 byte'
     for factor, suffix in abbrevs:
-        if bytes >= factor:
+        if bytesize >= factor:
             break
-    return '%.*f %s' % (precision, bytes / factor, suffix)
+    if factor == 1:
+        precision = 0
+    return '%.*f %s' % (precision, bytesize / float(factor), suffix)
 
 def dirSize(start, follow_links=0, start_depth=0, max_depth=0, skip_errs=0):
 
@@ -63,7 +60,7 @@ def dirSize(start, follow_links=0, start_depth=0, max_depth=0, skip_errs=0):
     total = 0L
     for item in dir_list:
         # Get statistics on each item--file and subdirectory--of start
-        path = start + '\\' + item
+        path = os.path.join(start, item)
         try: stats = os.stat(path)
         except: 
             if not skip_errs:
@@ -79,7 +76,7 @@ def dirSize(start, follow_links=0, start_depth=0, max_depth=0, skip_errs=0):
     return total
 
 def getImmediateSubdirectories(dir):
-    return [dir + '\\' + name for name in os.listdir(dir)
+    return [os.path.join(dir, name) for name in os.listdir(dir)
             if os.path.isdir(os.path.join(dir, name))]
 
 def openURL(url, username, password):
@@ -161,7 +158,7 @@ def updatePlex(src, dest):
         print "Number of Plex media_streams rows updated: %d" % cur.rowcount
         con.commit()
     except lite.Error, e:
-        print "Error %s:" % e.args[0]
+        print "Error %s" % e.args[0]
         sys.exit(1)
     finally:
         if con:
@@ -233,7 +230,7 @@ def balance(paths, count, already_processed=[]):
     target_free_space = total_free_space / len(paths)
 
     free_space_difference_ratio = (least_free_space/1.0) / (greatest_free_space/1.0)
-    if free_space_difference_ratio > 0.8 or count <= 0:
+    if free_space_difference_ratio > 0.95 or count <= 0:
         return
 
     best_match_folder = ''
@@ -254,13 +251,13 @@ def balance(paths, count, already_processed=[]):
 
     if best_match_folder != '' and path_with_greatest_free_space != '':
         src = best_match_folder
-        dest = path_with_greatest_free_space + '\\' + os.path.basename(best_match_folder)
+        dest = os.path.join(path_with_greatest_free_space, os.path.basename(best_match_folder))
         print "Moving: %s -> %s (%s)" % (src, dest, humanize_bytes(min_size, 2))
-        shutil.move(src, dest)
-        updateNzbDrone(src, dest)
-        #updateSickbeard(src, dest)
-        updateXBMC(src, dest)
+	shutil.move(src, dest)
+	updateNzbDrone(src, dest)
         updatePlex(src, dest)
+        #updateSickbeard(src, dest)
+        #updateXBMC(src, dest)
         count -= 1
         already_processed.append(dest)
         if len(sys.argv) == 0:
@@ -270,6 +267,4 @@ def balance(paths, count, already_processed=[]):
     else:
         return
 
-#stopSickbeard()
-balance(['E:\TV Shows', 'G:\TV Shows', 'H:\TV Shows', 'C:\TV Shows'], config.getint('General','balance_limit'))
-#startSickbeard()
+balance(['/media/Big/TV Shows', '/media/Big2/TV Shows', '/media/Big3/TV Shows', '/media/Big4/TV Shows', '/media/Big5/TV Shows'], config.getint('General','balance_limit'))
